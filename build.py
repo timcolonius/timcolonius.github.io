@@ -45,7 +45,7 @@ body {
   font-size: 16px; line-height: 1.65;
   color: #1a1a1a; background: #fff;
 }
-a { color: #b1540a; text-decoration: none; }
+a { color: #FF6C0C; text-decoration: none; }
 a:hover { text-decoration: underline; }
 img { max-width: 100%; height: auto; display: block; }
 
@@ -62,13 +62,14 @@ img { max-width: 100%; height: auto; display: block; }
 .topbar .container {
   display: flex; align-items: center; gap: 1.5rem;
 }
-.topbar-logo img { height: 34px; width: auto; flex-shrink: 0; }
+.topbar-logo { flex-shrink: 0; }
+.topbar-logo img { height: 34px; width: auto; max-width: none; flex-shrink: 0; }
 .topbar-divider {
   width: 1px; height: 28px; background: #ccc; flex-shrink: 0;
 }
 .topbar-group {
   font-size: 1.25rem; font-weight: 500; color: #555;
-  letter-spacing: .01em; white-space: nowrap;
+  letter-spacing: .01em; min-width: 0;   /* allow it to wrap on narrow screens */
 }
 
 /* ── Nav ──────────────────────────────────────────────────────────────── */
@@ -107,30 +108,31 @@ nav .container {
 
 /* ── Hero (PI card) ───────────────────────────────────────────────────── */
 .hero {
-  background: #fff;
-  border-top: 1px solid #eee;
-  padding: 2.5rem 0;
+  background: #f4f4f4;
+  border-bottom: 1px solid #e4e4e4;
+  padding: 1.6rem 0;
 }
 .hero-inner {
-  display: flex; gap: 2.5rem; align-items: flex-start;
+  display: flex; gap: 2rem; align-items: center;
 }
 .hero-photo {
-  width: 155px; min-width: 155px; border-radius: 6px;
+  width: 130px; min-width: 130px; border-radius: 6px;
   box-shadow: 0 2px 12px rgba(0,0,0,.15);
 }
 .hero-photo-placeholder {
-  width: 155px; min-width: 155px; height: 195px;
+  width: 130px; min-width: 130px; height: 163px;
   background: #ddd; border-radius: 6px;
   display: flex; align-items: center; justify-content: center;
   color: #999; font-size: .8rem; text-align: center;
 }
-.hero-text h1 { font-size: 1.9rem; font-weight: 700; margin-bottom: .25rem; color: #1a1a1a; }
+.hero-text h1 { font-size: 1.25rem; font-weight: 500; margin-bottom: .25rem; color: #555; }
 .hero-text .subtitle {
-  color: #FF6C0C; font-size: .95rem; font-weight: 600; margin-bottom: .15rem;
+  color: #555; font-size: .95rem; font-weight: 600; font-style: italic; margin-bottom: .15rem;
 }
 .hero-text .institution { color: #777; font-size: .88rem; margin-bottom: 1rem; }
-.hero-text p { color: #333; font-size: .93rem; margin-bottom: .8rem; max-width: 580px; }
+.hero-text p { color: #333; font-size: .93rem; margin-bottom: .8rem; }
 .hero-links { display: flex; gap: .75rem; flex-wrap: wrap; margin-top: 1rem; }
+.hero-links .btn { padding: .32rem .82rem; font-size: .65rem; }  /* 25% smaller than default .btn */
 .btn {
   padding: .42rem 1.1rem; border-radius: 4px; font-size: .87rem;
   font-weight: 600; display: inline-block; transition: opacity .15s;
@@ -220,6 +222,7 @@ h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: .4rem; }
 }
 .rc-body { padding: .85rem 1.2rem; }
 .rc-body h3 { font-size: 1.05rem; margin-bottom: 0; }
+.rc-more { display: inline-block; margin-top: .55rem; font-size: .82rem; font-weight: 600; }
 /* Mouse devices: hover greys/dims the figure and reveals the blurb over it */
 .research-card:hover .rc-img,  .research-card:focus-within .rc-img,
 .research-card:hover .rc-img-placeholder, .research-card:focus-within .rc-img-placeholder {
@@ -303,7 +306,7 @@ footer a { color: #aaa; }
   .hero-inner { flex-direction: column; }
   .hero-photo, .hero-photo-placeholder { width: 120px; min-width: 120px; }
   .nav-links a { padding: .55rem .5rem; font-size: .8rem; }
-  .topbar-group { display: none; }
+  .topbar-group { font-size: 1.05rem; line-height: 1.25; }
   .banner { height: 56px; }
   .banner img { height: 75px; }
   .alumni-list th:nth-child(3), .alumni-list td:nth-child(3) { display: none; }
@@ -335,7 +338,7 @@ def footer_html() -> str:
     return f"""
 <footer>
   <div class="container">
-    <span>{PI_NAME} &nbsp;·&nbsp; {DEPT} &nbsp;·&nbsp; {INSTITUTION}</span>
+    <span>{PI_NAME} &nbsp;·&nbsp; {INSTITUTION}</span>
     <span>Last updated: {DATE}</span>
   </div>
 </footer>"""
@@ -373,7 +376,7 @@ def _research_section():
     rows = list(ws.iter_rows(values_only=True))
     hdr = [str(h).strip().lower() if h else "" for h in rows[0]]
     col = lambda name: next((i for i, h in enumerate(hdr) if h == name), None)
-    ci = {k: col(k) for k in ("title", "blurb", "image", "alt_text")}
+    ci = {k: col(k) for k in ("tag", "title", "blurb", "image", "alt_text")}
     def g(r, key):
         i = ci[key]
         return str(r[i]).strip() if i is not None and i < len(r) and r[i] else ""
@@ -390,12 +393,16 @@ def _research_section():
             fig = '<div class="rc-img-placeholder">figure coming soon</div>'
         paras = "".join(f"<p>{html.escape(p.strip())}</p>"
                         for p in re.split(r"\n\s*\n|\n", g(r, "blurb")) if p.strip())
+        tag = g(r, "tag")
+        more = (f'<a class="rc-more" href="publications.html?area={html.escape(tag)}">'
+                f'Related publications &rarr;</a>') if tag else ""
         cards += f"""
       <div class="research-card" tabindex="0">
         {fig}
         <div class="rc-body">
           <h3>{html.escape(title)}</h3>
           <div class="rc-blurb">{paras}</div>
+          {more}
         </div>
       </div>"""
     return f"""
@@ -409,14 +416,13 @@ def _research_section():
 
 def build_home():
     bio_paras = [
-        "We develop and apply high-fidelity numerical methods to study "
-        "a wide range of problems in fluid mechanics, with emphasis on "
-        "flow-induced sound, multi-phase flows, flow instability and control, "
-        "and high-performance computing.",
-        "Our group is part of the <a href='https://www.caltech.edu'>California Institute "
-        "of Technology</a>, <a href='https://eas.caltech.edu'>Division of Engineering and "
-        "Applied Science</a>, <a href='https://mce.caltech.edu'>Department of Mechanical "
-        "and Civil Engineering</a>.",
+        "We seek to understand the fundamental mechanisms underlying complex "
+        "unsteady flows and to develop predictive theoretical, computational, and "
+        "reduced-order models. Current research spans turbulence and coherent "
+        "structures, aeroacoustics, instability and transition, unsteady aerodynamics "
+        "and flow–structure interaction, cavitation and multiphase flows, numerical "
+        "methods, and data-driven approaches motivated by challenges in aerospace "
+        "and biomedicine.",
     ]
     bio_html = "".join(f"<p>{p}</p>\n" for p in bio_paras)
 
@@ -429,7 +435,6 @@ def build_home():
         pi_photo_html = '<div class="hero-photo-placeholder">Photo</div>'
 
     body = f"""
-{_research_section()}
 <div class="hero">
   <div class="container">
     <div class="hero-inner">
@@ -437,12 +442,15 @@ def build_home():
       <div class="hero-text">
         <h1>{PI_NAME}</h1>
         <div class="subtitle">{PI_TITLE}</div>
-        <div class="institution">{INSTITUTION} &nbsp;·&nbsp; {DEPT}</div>
+        <div class="institution">
+          <a href="https://www.caltech.edu">{INSTITUTION}</a> &nbsp;·&nbsp;
+          <a href="https://eas.caltech.edu">{DEPT}</a> &nbsp;·&nbsp;
+          <a href="https://mce.caltech.edu">Department of Mechanical and Civil Engineering</a>
+        </div>
         {bio_html}
         <div class="hero-links">
-          <a class="btn btn-primary" href="cv.pdf" target="_blank">CV (PDF)</a>
-          <a class="btn btn-outline" href="publications.html">Publications</a>
-          <a class="btn btn-outline"
+          <a class="btn btn-primary" href="cv.pdf" target="_blank">CV</a>
+          <a class="btn btn-primary"
              href="https://scholar.google.com/citations?user=zrUK8W0AAAAJ&hl=en"
              target="_blank">Google Scholar</a>
         </div>
@@ -450,6 +458,7 @@ def build_home():
     </div>
   </div>
 </div>
+{_research_section()}
 """
     (OUT / "index.html").write_text(page(PI_NAME, "index.html", body))
     print("  index.html")
@@ -819,6 +828,13 @@ function filterPubs() {{
     hdr.style.display = any ? '' : 'none';
   }});
 }}
+// Apply ?area=<tag> from the URL (e.g. when linked from a research card)
+(function() {{
+  const area = new URLSearchParams(window.location.search).get('area');
+  if (!area) return;
+  const chip = document.querySelector('.pub-chip[data-area="' + area + '"]');
+  if (chip) setArea(chip);
+}})();
 </script>"""
     (OUT / "publications.html").write_text(page("Publications", "publications.html", body))
     # Serve the bibliography generated by gen_cv_lists.py (run earlier in the pipeline).
