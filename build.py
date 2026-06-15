@@ -726,6 +726,9 @@ def _build_publications_inline():
             rec = {headers[i]: (str(v).strip() if v is not None and not hasattr(v, "strftime")
                                  else (v.strftime("%Y-%m-%d") if hasattr(v, "strftime") else ""))
                    for i, v in enumerate(raw) if i < len(headers)}
+            # Normalize non-breaking spaces (U+00A0) to regular spaces so display
+            # and the search filter behave (e.g. "da Silva" pasted from a PDF).
+            rec = {k: v.replace("\xa0", " ") for k, v in rec.items()}
             if any(rec.values()): rows.append(rec)
 
     # Research areas (tag, title) for the filter chips, in Research-sheet order
