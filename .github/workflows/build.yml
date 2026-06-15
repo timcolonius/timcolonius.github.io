@@ -44,7 +44,7 @@ jobs:
       - name: Compile CV (LaTeX)
         # Pinned to an exact release (TeX Live 2025) so the toolchain can't drift
         # and silently re-break biber/bibtex. Bump deliberately, not automatically.
-        uses: xu-cheng/latex-action@v3.3.0
+        uses: xu-cheng/latex-action@3.3.0
         with:
           working_directory: cv
           root_file: Colonius.tex
