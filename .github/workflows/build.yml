@@ -1,0 +1,71 @@
+name: Build and deploy website
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@v6.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install Python dependencies
+        run: pip install openpyxl
+
+      # gen_cv_lists.py and build.py fetch the published Google Sheet directly
+      # (see sheet_data.py), so there is no separate download step. To point at a
+      # different sheet, set the repo variable SHEET_EXPORT_URL.
+      - name: Update CV lists from spreadsheet
+        env:
+          SHEET_EXPORT_URL: ${{ vars.SHEET_EXPORT_URL }}
+        run: python gen_cv_lists.py
+
+      - name: Build site
+        env:
+          SHEET_EXPORT_URL: ${{ vars.SHEET_EXPORT_URL }}
+        run: python build.py
+
+      - name: Compile CV (LaTeX)
+        # Pinned to an exact release (TeX Live 2025) so the toolchain can't drift
+        # and silently re-break biber/bibtex. Bump deliberately, not automatically.
+        uses: xu-cheng/latex-action@v3.3.0
+        with:
+          working_directory: cv
+          root_file: Colonius.tex
+          latexmk_use_xelatex: false
+          args: "-pdf -interaction=nonstopmode -file-line-error"
+
+      - name: Copy CV to docs
+        run: cp cv/Colonius.pdf docs/cv.pdf
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
