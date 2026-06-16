@@ -425,7 +425,6 @@ def _research_section():
     return f"""
 <div class="container">
   <div class="section">
-    <h2>Research</h2>
     <div class="research-grid">{cards}
     </div>
   </div>
