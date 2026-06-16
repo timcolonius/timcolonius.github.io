@@ -136,6 +136,7 @@ nav .container {
 }
 .hero-text .institution { color: #777; font-size: .88rem; margin-bottom: 1rem; }
 .hero-text p { color: #333; font-size: .93rem; margin-bottom: .8rem; }
+.inline-rainbow { display: inline-block; height: 1.15em; width: auto; vertical-align: -0.2em; margin-left: .25em; }
 .hero-links { display: flex; gap: .45rem; flex-wrap: wrap; margin-top: .85rem; }
 .hero-links .chip {
   background: #fff; border: 1px solid #ccc; border-radius: 5px;
@@ -439,6 +440,10 @@ def build_home():
         "and flow–structure interaction, cavitation and multiphase flows, numerical "
         "methods, and data-driven approaches motivated by challenges in aerospace "
         "and biomedicine.",
+        "We strive to create a research environment in which every member of the "
+        "group is treated with respect, supported in their growth, and able to bring "
+        "their full selves to the work we do together. "
+        '<img src="images/rainbow.png" alt="rainbow flag" class="inline-rainbow"/>',
     ]
     bio_html = "".join(f"<p>{p}</p>\n" for p in bio_paras)
 
