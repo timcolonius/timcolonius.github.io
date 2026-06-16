@@ -18,6 +18,8 @@ Two things are updated:
        Book Chapters, Doctoral students (as advisor)
 """
 
+from __future__ import annotations   # type hints are strings → runs on Python 3.7+
+
 import re
 import sys
 from datetime import date

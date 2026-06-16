@@ -6,6 +6,8 @@ Run:  python3 build.py
 Deploy: git push  (GitHub Actions handles the rest)
 """
 
+from __future__ import annotations   # type hints are strings → runs on Python 3.7+
+
 import os, re, shutil, html
 from datetime import datetime
 from pathlib import Path
