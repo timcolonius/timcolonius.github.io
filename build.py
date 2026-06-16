@@ -23,7 +23,8 @@ DATE = datetime.now().strftime("%Y-%m-%d")
 
 SITE_TITLE  = "Computational and Data-Driven Fluid Dynamics"
 PI_NAME     = "Tim Colonius"
-PI_TITLE    = "Frank and Ora Lee Marble Professor of Mechanical Engineering"
+PI_TITLE    = ("Frank and Ora Lee Marble Professor of Mechanical Engineering and "
+               "Medical Engineering<br>Cecil and Sally Drinkward Leadership Chair")
 INSTITUTION = "California Institute of Technology"
 DEPT        = "Division of Engineering and Applied Science"
 NAV_LINKS   = [
@@ -113,7 +114,11 @@ nav .container {
   padding: 1.6rem 0;
 }
 .hero-inner {
-  display: flex; gap: 2rem; align-items: center;
+  display: flex; gap: 2rem; align-items: flex-start;
+}
+.hero-photo-col {        /* photo with the contact buttons centered beneath */
+  flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center;
 }
 .hero-photo {
   width: 130px; min-width: 130px; border-radius: 6px;
@@ -131,8 +136,17 @@ nav .container {
 }
 .hero-text .institution { color: #777; font-size: .88rem; margin-bottom: 1rem; }
 .hero-text p { color: #333; font-size: .93rem; margin-bottom: .8rem; }
-.hero-links { display: flex; gap: .75rem; flex-wrap: wrap; margin-top: 1rem; }
-.hero-links .btn { padding: .32rem .82rem; font-size: .65rem; }  /* 25% smaller than default .btn */
+.hero-links { display: flex; gap: .45rem; flex-wrap: wrap; margin-top: .85rem; }
+.hero-links .chip {
+  background: #fff; border: 1px solid #ccc; border-radius: 5px;
+  height: 40px; padding: 0 .55rem;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: #4285F4; font-weight: 600; font-size: .92rem;
+  transition: border-color .15s;
+}
+.hero-links .chip:hover { border-color: #4285F4; text-decoration: none; }
+.hero-links .chip svg { width: 24px; height: 24px; fill: currentColor; display: block; }
+.hero-links .chip img { width: 28px; height: 28px; display: block; }
 .btn {
   padding: .42rem 1.1rem; border-radius: 4px; font-size: .87rem;
   font-weight: 600; display: inline-block; transition: opacity .15s;
@@ -341,6 +355,9 @@ def footer_html() -> str:
     <span>{PI_NAME} &nbsp;·&nbsp; {INSTITUTION}</span>
     <span>Last updated: {DATE}</span>
   </div>
+  <div class="container">
+    <span style="font-size:.72rem; opacity:.6">Google Scholar icon by Terence Eden on <a href="https://icon-icons.com/authors/816-terence-eden" target="_blank">Icon-Icons.com</a></span>
+  </div>
 </footer>"""
 
 def banner_html() -> str:
@@ -438,7 +455,19 @@ def build_home():
 <div class="hero">
   <div class="container">
     <div class="hero-inner">
-      {pi_photo_html}
+      <div class="hero-photo-col">
+        {pi_photo_html}
+        <div class="hero-links">
+          <a class="chip" href="cv.pdf" target="_blank">CV</a>
+          <a class="chip" href="mailto:colonius@caltech.edu" aria-label="Email" title="Email">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+          </a>
+          <a class="chip" href="https://scholar.google.com/citations?user=zrUK8W0AAAAJ&hl=en"
+             target="_blank" aria-label="Google Scholar" title="Google Scholar">
+            <img src="images/google_scholar_icon_130918.png" alt="Google Scholar"/>
+          </a>
+        </div>
+      </div>
       <div class="hero-text">
         <h1>{PI_NAME}</h1>
         <div class="subtitle">{PI_TITLE}</div>
@@ -448,12 +477,6 @@ def build_home():
           <a href="https://mce.caltech.edu">Department of Mechanical and Civil Engineering</a>
         </div>
         {bio_html}
-        <div class="hero-links">
-          <a class="btn btn-primary" href="cv.pdf" target="_blank">CV</a>
-          <a class="btn btn-primary"
-             href="https://scholar.google.com/citations?user=zrUK8W0AAAAJ&hl=en"
-             target="_blank">Google Scholar</a>
-        </div>
       </div>
     </div>
   </div>
