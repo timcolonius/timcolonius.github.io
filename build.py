@@ -1080,6 +1080,11 @@ def main():
     build_publications()
     build_software()
 
+    # GitHub Pages custom domain — emitted into the published output so the
+    # domain persists across Actions deploys (serves the site at this hostname).
+    (OUT / "CNAME").write_text("colonius.caltech.edu\n")
+    print("  CNAME (colonius.caltech.edu)")
+
     # ── Copy CV PDF (compiled from cv/Colonius.tex) ──────────────────────
     cv_src = Path(__file__).parent / "cv" / "Colonius.pdf"
     if cv_src.exists():
