@@ -25,6 +25,7 @@ DATE = datetime.now().strftime("%Y-%m-%d")
 
 SITE_TITLE  = "Computational and Data-Driven Fluid Dynamics"
 PI_NAME     = "Tim Colonius"
+PI_PHOTO    = "Tim.jpg"   # PI headshot (Tim is added in code, not via the People tab)
 PI_TITLE    = ("Frank and Ora Lee Marble Professor of Mechanical Engineering and "
                "Medical Engineering<br>Cecil and Sally Drinkward Leadership Chair")
 INSTITUTION = "California Institute of Technology"
@@ -450,12 +451,9 @@ def build_home():
     bio_html = "".join(f"<p>{p}</p>\n" for p in bio_paras)
 
     # PI photo for hero block
-    photo_index = _build_photo_index()
-    pi_photo_match = _find_photo("Tim", "Colonius", photo_index)
-    if pi_photo_match:
-        pi_photo_html = f'<img class="hero-photo" src="images/{pi_photo_match.name}" alt="{PI_NAME}"/>'
-    else:
-        pi_photo_html = '<div class="hero-photo-placeholder">Photo</div>'
+    pi_photo_html = (f'<img class="hero-photo" src="images/{PI_PHOTO}" alt="{PI_NAME}"/>'
+                     if (OUT / "images" / PI_PHOTO).exists()
+                     else '<div class="hero-photo-placeholder">Photo</div>')
 
     body = f"""
 <div class="hero">
@@ -530,54 +528,16 @@ def _role_label(role: str) -> str:
     if "grad student" in r.lower():     return "Graduate Research Assistant"
     return r  # fallback: display as-is
 
-def _build_photo_index() -> dict:
-    """Scan docs/images/ and return { norm_stem → Path } for every image file.
-    Used to match a person's name to their photo file (non-people images like
-    logos/banners/research simply won't match any person name)."""
-    index = {}
-    img_dir = OUT / "images"
-    if not img_dir.exists():
-        return index
-    for f in img_dir.iterdir():
-        if f.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp"):
-            index[_norm_name(f.stem)] = f
-    return index
-
-def _find_photo(first: str, last: str, photo_index: dict):
-    """
-    Return the Path of the best matching photo, or None.
-    Tries (in order):
-      1. Exact normalized last name  (Glenn.jpg → 'glenn' == norm('Glenn'))
-      2. Exact normalized first name (Ethan.png → 'ethan' == norm('Ethan'))
-      3. Any stem that is a substring of last or first name
-         (Catsoulis.jpg → 'catsoulis' ∈ norm('Soto Catsoulis'))
-      4. Last or first name that is a substring of a stem
-         (handles longer compound filenames if user adds them later)
-    """
-    nl = _norm_name(last)
-    nf = _norm_name(first)
-    if nl in photo_index: return photo_index[nl]
-    if nf in photo_index: return photo_index[nf]
-    for stem, path in photo_index.items():
-        if stem and (stem in nl or stem in nf):
-            return path
-    for stem, path in photo_index.items():
-        if nl and nl in stem: return path
-        if nf and nf in stem: return path
-    return None
-
-def _photo_html(first: str, last: str, name_display: str, photo_index: dict) -> str:
-    """Return <img> tag if a matching photo is found, else initials placeholder."""
-    match = _find_photo(first, last, photo_index)
-    if match:
-        return f'<img class="person-photo" src="images/{match.name}" alt="{name_display}"/>'
+def _photo_html(image: str, name_display: str) -> str:
+    """Return an <img> tag for the named photo file (from the People tab's 'image'
+    column), or an initials placeholder if it's blank/missing on disk."""
+    if image and (OUT / "images" / image).exists():
+        return f'<img class="person-photo" src="images/{html.escape(image)}" alt="{html.escape(name_display)}"/>'
     initials = "".join(w[0].upper() for w in name_display.split() if w)[:2]
     return f'<div class="person-photo-placeholder">{initials}</div>'
 
 def build_people():
     """Build people.html from the People tab of the Google sheet."""
-    photo_index = _build_photo_index()
-
     # ── Load members ──────────────────────────────────────────────────────
     current: list[dict] = []
     alumni_phd: list[dict] = []
@@ -612,7 +572,7 @@ def build_people():
             def _col(sub, _h=hdr):
                 return next((i for i, h in enumerate(_h) if sub.lower() in h.lower()), None)
             ix = {k: _col(k) for k in
-                  ("Last", "First", "Role", "End date", "Thesis tag",
+                  ("Last", "First", "Role", "image", "End date", "Thesis tag",
                    "Present Position", "Link")}
             def _g(r, key, _ix=ix):
                 i = _ix[key]
@@ -624,6 +584,7 @@ def build_people():
                 role  = _g(r, "Role")
                 year  = _parse_year(_g(r, "End date"))
                 rec = {"first": first, "last": last, "role": role, "year": year,
+                       "image": _g(r, "image"),
                        "position": _g(r, "Present Position"), "link": _g(r, "Link")}
                 if role == "GRA Advisee":
                     th = thesis_index.get(_g(r, "Thesis tag"), {})
@@ -639,7 +600,8 @@ def build_people():
             print(f"  WARNING: could not load people data: {e}")
 
     # ── Always include PI at top of current group ─────────────────────────
-    pi_rec = {"first": "Tim", "last": "Colonius", "role": "Faculty", "year": None}
+    pi_rec = {"first": "Tim", "last": "Colonius", "role": "Faculty", "year": None,
+              "image": PI_PHOTO}
     # Remove any spreadsheet entry for Tim (avoid duplicates)
     current = [p for p in current if not
                (_norm_name(p["first"]) == "tim" and _norm_name(p["last"]) == "colonius")]
@@ -657,7 +619,7 @@ def build_people():
     current_cards = ""
     for p in current:
         name = f"{p['first']} {p['last']}"
-        photo = _photo_html(p["first"], p["last"], name, photo_index)
+        photo = _photo_html(p.get("image", ""), name)
         label = _role_label(p["role"])
         current_cards += f"""
     <div class="person-card">
@@ -1074,8 +1036,37 @@ def build_css():
 
 # ── Main ───────────────────────────────────────────────────────────────────────
 
+def _resize_images(max_dim=1200):
+    """Downsize oversized raster images in docs/images/ in place, so images added
+    via the GitHub web UI (e.g. a full-size phone photo) don't bloat the page or
+    alias. Any image whose longest side exceeds max_dim is shrunk with a good
+    resampler. Skipped gracefully if Pillow isn't installed (e.g. some local setups)."""
+    try:
+        from PIL import Image
+    except ImportError:
+        print("  (Pillow not installed — skipping image auto-resize; CI will handle it)")
+        return
+    resample = getattr(getattr(Image, "Resampling", Image), "LANCZOS")
+    for f in sorted((OUT / "images").iterdir()):
+        if f.suffix.lower() not in (".jpg", ".jpeg", ".png", ".webp"):
+            continue
+        try:
+            with Image.open(f) as im:
+                if max(im.size) <= max_dim:
+                    continue
+                w, h = im.size
+                im.thumbnail((max_dim, max_dim), resample)
+                if f.suffix.lower() in (".jpg", ".jpeg"):
+                    im.convert("RGB").save(f, quality=85, optimize=True)
+                else:
+                    im.save(f, optimize=True)
+                print(f"  resized {f.name}: {w}x{h} -> {im.size[0]}x{im.size[1]}")
+        except Exception as e:
+            print(f"  WARNING: could not resize {f.name}: {e}")
+
 def main():
     print(f"Building {SITE_TITLE}  →  {OUT}/")
+    _resize_images()
     build_css()
     build_home()
     build_people()

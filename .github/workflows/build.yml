@@ -26,7 +26,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install Python dependencies
-        run: pip install openpyxl
+        run: pip install openpyxl pillow
 
       # gen_cv_lists.py and build.py fetch the published Google Sheet directly
       # (see sheet_data.py), so there is no separate download step. To point at a

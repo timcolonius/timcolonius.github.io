@@ -29,7 +29,9 @@ site:            ## Build the HTML site into docs/ (fetches the sheet)
 
 cv:              ## Regenerate CV from the sheet, compile PDF, copy to docs/cv.pdf
 	python3 gen_cv_lists.py
-	PATH="$(TEXBIN):$$PATH" latexmk -r cv/latexmkrc -cd -pdf -interaction=nonstopmode -file-line-error cv/Colonius.tex
+	# -gg: wipe intermediates and rebuild from scratch, so biblatex defernumbers
+	# always renumbers cleanly when entries are added/removed (avoids stale "C0").
+	PATH="$(TEXBIN):$$PATH" latexmk -gg -r cv/latexmkrc -cd -pdf -interaction=nonstopmode -file-line-error cv/Colonius.tex
 	cp cv/Colonius.pdf docs/cv.pdf
 
 serve: site      ## Build the site and preview at http://localhost:8000
