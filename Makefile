@@ -38,11 +38,15 @@ serve: site      ## Build the site and preview at http://localhost:8000
 	@echo "Serving docs/ at http://localhost:8000  (Ctrl+C to stop)"
 	@cd docs && python3 -m http.server 8000
 
-deploy:          ## Commit changed files (images/code) and push -> GitHub builds & deploys
+deploy:          ## Sync with GitHub, commit changes, and push -> builds & deploys
 	git add -A
-	@git diff --cached --quiet \
-	  && echo "No file changes (sheet-only edit?). Use 'make redeploy' or the Actions 'Run workflow' button." \
-	  || (git commit -m "$(MSG)" && git push)
+	@if git diff --cached --quiet; then \
+	  echo "(no file changes to commit — for a sheet-only edit use 'make redeploy')"; \
+	else \
+	  git commit -m "$(MSG)"; \
+	fi
+	git pull --rebase origin main
+	git push
 
 redeploy:        ## Force a GitHub rebuild after a sheet-only edit (empty commit)
 	git commit --allow-empty -m "Rebuild from updated spreadsheet"
