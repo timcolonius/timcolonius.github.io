@@ -957,7 +957,7 @@ def build_software():
     hdr = [str(h).strip() if h else "" for h in rows[0]]
     col = lambda name: next((i for i, h in enumerate(hdr) if h.lower() == name.lower()), None)
     ci = {k: col(k) for k in ("Repo", "Description", "Github", "Documentation",
-                              "Blurb", "Refs", "Badges", "Notice")}
+                              "App", "Blurb", "Refs", "Badges", "Notice")}
     def g(r, key):
         i = ci[key]
         return str(r[i]).strip() if i is not None and i < len(r) and r[i] else ""
@@ -980,6 +980,8 @@ def build_software():
             links_html += f'<a class="btn btn-primary" href="{html.escape(g(r, "Github"))}" target="_blank">GitHub</a>'
         if g(r, "Documentation"):
             links_html += f'<a class="btn btn-outline" href="{html.escape(g(r, "Documentation"))}" target="_blank">Documentation</a>'
+        if g(r, "App"):
+            links_html += f'<a class="btn btn-outline" href="{html.escape(g(r, "App"))}" target="_blank">App</a>'
         warning_html = ""
         if g(r, "Notice"):
             warning_html = (
