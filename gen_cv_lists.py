@@ -5,13 +5,14 @@ gen_cv_lists.py  —  Update Colonius.tex from the master spreadsheet.
 Usage:
     python3 gen_cv_lists.py
 
-Reads:  data/Colonius Group.xlsx
-Writes: Colonius.tex
+Reads:  the published Google Sheet, fetched at run time (see sheet_data.py)
+Writes: cv/Colonius.tex, cv/colonius.bib
 
 Two things are updated:
   1. List sections (between BEGIN_GENERATED / END_GENERATED markers):
        Awards, Teaching, Committees, Professional Activities, Patents,
-       Invited Lectures, Doctoral Students (committee)
+       Invited Lectures, Doctoral Students (committee),
+       Undergraduate Researchers
 
   2. \\nocite{} lines in each \\begin{refsection} block:
        Submitted Articles, Journal Articles, Conference Papers,
@@ -147,6 +148,7 @@ SECTION_KEYS = {
     "Patents":                                  "patents",
     "Invited Lectures":                         "lectures",
     "Doctoral Students (member of committee)":  "committee-students",
+    "Undergraduate Researchers":                "undergrad-researchers",
 }
 
 def fmt_plain(items):
@@ -172,21 +174,41 @@ FORMATTERS = {
     "patents":              fmt_plain,
     "lectures":             fmt_plain,
     "committee-students":   fmt_plain,
+    "undergrad-researchers": fmt_plain,
 }
 
 def update_list_sections(tex: str, wb) -> str:
     ws = wb["CV Data"]
     sections: dict[str, list[str]] = {}
     current = None
+    unknown: list[str] = []
     for rownum, row in enumerate(ws.iter_rows(values_only=True), start=1):
         a = str(row[0]).strip() if row[0] else ""
         b = str(row[1]).strip() if row[1] else ""
-        if a and a in SECTION_KEYS:
-            current = a
-            sections[current] = []
-        elif current and b:
-            where = f"CV Data!B{rownum} ({current})"
-            sections[current].append(tex_text(b, where))
+        if b:
+            # Any row carrying text in column B is a list item. Column A on such a
+            # row is just a row number or label, and is ignored.
+            if current:
+                where = f"CV Data!B{rownum} ({current})"
+                sections[current].append(tex_text(b, where))
+        elif a:
+            # Column A with an EMPTY column B is a section heading. An unknown one
+            # would otherwise be skipped, silently appending every row beneath it
+            # to the PREVIOUS section.
+            if a in SECTION_KEYS:
+                current = a
+                sections[current] = []
+            else:
+                unknown.append(f"CV Data!A{rownum}: {a!r}")
+
+    if unknown:
+        sys.exit(
+            "ERROR: unrecognized section heading(s) in CV Data column A:\n  "
+            + "\n  ".join(unknown)
+            + "\n\nAdd each to SECTION_KEYS and FORMATTERS in gen_cv_lists.py (and add\n"
+              "matching BEGIN_GENERATED/END_GENERATED markers in cv/Colonius.tex), or the\n"
+              "rows beneath it are absorbed into the preceding section without warning."
+        )
 
     replaced = 0
     for section_name, key in SECTION_KEYS.items():
