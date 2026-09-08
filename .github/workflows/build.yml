@@ -7,8 +7,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages
@@ -19,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@v6.0.0
@@ -54,6 +54,31 @@ jobs:
       - name: Copy CV to docs
         run: cp cv/Colonius.pdf docs/cv.pdf
 
+      - name: Check out CSTAT documentation source
+        uses: actions/checkout@v5.0.1
+        with:
+          repository: ComputationalFlowPhysics/CSTAT
+          ref: main
+          path: _cstat
+          persist-credentials: false
+
+      - name: Install Doxygen
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends doxygen
+
+      - name: Build and check CSTAT documentation
+        working-directory: _cstat
+        run: python3 scripts/documentation/build.py
+
+      - name: Include CSTAT in the published website
+        run: |
+          test -s _cstat/build-documentation/html/index.html
+          test -s _cstat/build-documentation/html/annotated.html
+          mkdir docs/cstat
+          cp -a _cstat/build-documentation/html/. docs/cstat/
+          git -C _cstat rev-parse HEAD > docs/cstat/source-revision.txt
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -62,6 +87,9 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
